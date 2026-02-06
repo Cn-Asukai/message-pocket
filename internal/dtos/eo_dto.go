@@ -8,5 +8,5 @@ type EOEventRequest struct {
 	DeploymentID string `json:"deploymentId"`
 	ProjectName  string `json:"projectName"`
 	RepoBranch   string `json:"repoBranch"`
-	Timestamp    string `json:"timestanp"` // 注意：原 TypeScript 代码中拼写为 "timestanp"
+	Timestamp    string `json:"timestamp"`
 }

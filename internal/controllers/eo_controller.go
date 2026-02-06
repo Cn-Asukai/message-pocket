@@ -1,63 +1,55 @@
 package controllers
 
 import (
-	"fmt"
-	"log"
-
 	"message-pocket/internal/config"
 	"message-pocket/internal/dtos"
 	"message-pocket/internal/services"
+	"message-pocket/internal/utils"
 
 	"github.com/pocketbase/pocketbase/core"
 )
 
 // EOController EO 控制器
 type EOController struct {
+	eoService     *services.EOService
 	napcatService *services.NapCatService
 	config        *config.Config
 }
 
 // NewEOController 创建 EO 控制器实例
-func NewEOController(napcatService *services.NapCatService, cfg *config.Config) *EOController {
+func NewEOController(
+	eoService *services.EOService,
+	napcatService *services.NapCatService,
+	cfg *config.Config,
+) *EOController {
 	return &EOController{
+		eoService:     eoService,
 		napcatService: napcatService,
 		config:        cfg,
 	}
 }
 
-// getMessageTypeLabel 根据事件类型获取中文标签
-func (c *EOController) getMessageTypeLabel(eventType string) string {
-	switch eventType {
-	case "deployment.created":
-		return "开始部署"
-	default:
-		return eventType
-	}
-}
-
 // EOWebhookEvent 处理 EO Webhook 事件
 func (c *EOController) EOWebhookEvent(e *core.RequestEvent) error {
+	ctx := e.Request.Context()
+
 	// 解析请求体
 	var req dtos.EOEventRequest
 	if err := e.BindBody(&req); err != nil {
 		return err
 	}
-	log.Printf("Received EO event: %+v", req)
+	e.App.Logger().InfoContext(ctx, "Received EO event", "request", req)
 
-	// 获取消息类型标签
-	messageTypeLabel := c.getMessageTypeLabel(req.EventType)
+	groupID := config.GetConfig().NapCatConfig.GroupID
 
-	// 发送群消息
-	message := fmt.Sprintf("🚀 EO 有新事件: %s", messageTypeLabel)
-	groupID := ""
-
-	if err := c.napcatService.SendGroupMessage(groupID, message); err != nil {
-		log.Printf("Failed to send group message: %v", err)
-		return e.String(500, fmt.Sprintf(`{"status": 1, "message": "Failed to send notification: %v"}`, err))
+	message := c.eoService.TransformEventToMessage(&req)
+	if err := c.napcatService.SendGroupMessage(ctx, groupID, message); err != nil {
+		e.App.Logger().ErrorContext(ctx, "Failed to send group message", "err", err)
+		return e.JSON(500, utils.NewJsonResponseWithoutData(1, "Failed to send group message"))
 	}
 
-	log.Printf("Successfully sent notification for EO event: %s", req.EventType)
+	e.App.Logger().InfoContext(ctx, "Successfully sent notification for EO event", "event_type", req.EventType)
 
 	// 返回成功响应
-	return e.String(200, `{"status": 0, "message": "ok"}`)
+	return e.JSON(200, utils.NewJsonResponseWithoutData(0, "Success"))
 }

@@ -11,9 +11,18 @@ import (
 
 // Config 应用配置
 type Config struct {
-	URL     string `mapstructure:"url"`
-	Token   string `mapstructure:"token"`
-	GroupID string `mapstructure:"NAPCAT_GROUP_ID"`
+	ServerConfig ServerConfig `yaml:"server" mapstructure:"server"`
+	NapCatConfig NapCatConfig `yaml:"napcat" mapstructure:"napcat"`
+}
+
+type ServerConfig struct {
+	OpenToken string `yaml:"open_token" mapstructure:"open_token"`
+}
+
+type NapCatConfig struct {
+	URL     string `yaml:"url" mapstructure:"url"`
+	Token   string `yaml:"token" mapstructure:"token"`
+	GroupID string `yaml:"group_id" mapstructure:"group_id"`
 }
 
 var (
@@ -27,11 +36,15 @@ func LoadConfig() (*Config, error) {
 	once.Do(func() {
 		// 初始化viper，只使用环境变量
 		v := viper.New()
-
-		v.AutomaticEnv() // 自动绑定环境变量
+		v.AddConfigPath("./")
+		v.SetConfigName("config")
+		v.SetConfigType("yaml")
 
 		// 将配置绑定到结构体
 		instance = &Config{}
+		if err = v.ReadInConfig(); err != nil {
+			return
+		}
 		if err = v.Unmarshal(instance); err != nil {
 			return
 		}
@@ -41,7 +54,7 @@ func LoadConfig() (*Config, error) {
 			return
 		}
 
-		slog.Debug("配置加载成功: %+v", instance)
+		slog.Debug("config loaded success.", instance)
 	})
 	return instance, err
 }

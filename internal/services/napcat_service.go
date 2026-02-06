@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"message-pocket/internal/config"
@@ -26,7 +27,10 @@ type NapCatService struct {
 
 // NewNapCatService 创建 NapCat 服务实例
 func NewNapCatService(cfg *config.Config) *NapCatService {
-	return &NapCatService{}
+	return &NapCatService{
+		token:  cfg.NapCatConfig.Token,
+		apiURL: cfg.NapCatConfig.URL,
+	}
 }
 
 // getURL 构建完整的 API URL
@@ -35,12 +39,13 @@ func (s *NapCatService) getURL(endpoint string) string {
 }
 
 // post 发送 POST 请求到 NapCat API
-func (s *NapCatService) post(endpoint string, body any) (*any, error) {
+func (s *NapCatService) post(ctx context.Context, endpoint string, body any) (*any, error) {
 	url := s.getURL(endpoint)
 
 	client := resty.New()
 	responseData := Response[any]{}
 	response, err := client.R().
+		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", fmt.Sprintf("Bearer %s", s.token)).
 		SetBody(body).
@@ -62,7 +67,7 @@ func (s *NapCatService) post(endpoint string, body any) (*any, error) {
 }
 
 // SendGroupMessage 发送群消息
-func (s *NapCatService) SendGroupMessage(groupID, message string) error {
+func (s *NapCatService) SendGroupMessage(ctx context.Context, groupID, message string) error {
 	type SendGroupMsgRequest struct {
 		GroupID string `json:"group_id"`
 		Message string `json:"message"`
@@ -77,6 +82,6 @@ func (s *NapCatService) SendGroupMessage(groupID, message string) error {
 		Message: message,
 	}
 
-	_, err := s.post("send_group_msg", req)
+	_, err := s.post(ctx, "send_group_msg", req)
 	return err
 }
