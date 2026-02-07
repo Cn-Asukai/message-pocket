@@ -59,6 +59,9 @@ func main() {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		apiGroup := se.Router.Group("api")
 		{
+			// 添加 Trace 中间件（最先执行）
+			apiGroup.BindFunc(middlewares.TraceMiddleware())
+			// 添加 Token 验证中间件
 			apiGroup.BindFunc(middlewares.TokenAuthMiddleware())
 			// 添加 EO Webhook 路由
 			apiGroup.POST("/eo/webhook", eoController.EOWebhookEvent)
