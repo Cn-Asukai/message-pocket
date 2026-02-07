@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"message-pocket/internal/config"
-	"message-pocket/internal/dtos"
+	"message-pocket/internal/define/dtos"
 	"message-pocket/internal/services"
 	"message-pocket/internal/utils"
 
@@ -19,13 +19,11 @@ type EOController struct {
 // NewEOController 创建 EO 控制器实例
 func NewEOController(
 	eoService *services.EOService,
-	napcatService *services.NapCatService,
 	cfg *config.Config,
 ) *EOController {
 	return &EOController{
-		eoService:     eoService,
-		napcatService: napcatService,
-		config:        cfg,
+		eoService: eoService,
+		config:    cfg,
 	}
 }
 
@@ -40,15 +38,11 @@ func (c *EOController) EOWebhookEvent(e *core.RequestEvent) error {
 	}
 	e.App.Logger().InfoContext(ctx, "Received EO event", "request", req)
 
-	groupID := config.GetConfig().NapCatConfig.GroupID
-
-	message := c.eoService.TransformEventToMessage(&req)
-	if err := c.napcatService.SendGroupMessage(ctx, groupID, message); err != nil {
-		e.App.Logger().ErrorContext(ctx, "Failed to send group message", "err", err)
-		return e.JSON(500, utils.NewJsonResponseWithoutData(1, "Failed to send group message"))
+	// 调用服务处理事件
+	if err := c.eoService.EOWebhookEventHandle(ctx, &req); err != nil {
+		e.App.Logger().ErrorContext(ctx, "Failed to process EO event", "err", err)
+		return e.JSON(500, utils.NewJsonResponseWithoutData(500, "Failed to process event"))
 	}
-
-	e.App.Logger().InfoContext(ctx, "Successfully sent notification for EO event", "event_type", req.EventType)
 
 	// 返回成功响应
 	return e.JSON(200, utils.NewJsonResponseWithoutData(0, "Success"))

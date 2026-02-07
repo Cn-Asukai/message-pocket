@@ -10,14 +10,15 @@ func init() {
 		_, err := app.DB().NewQuery(`
 drop table if exists message_box;
 create table message_box (
-    id INT PRIMARY KEY NOT NULL,
-    status INT NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+	biz_id TEXT NOT NULL,
+    status INTEGER NOT NULL,
     message TEXT NOT NULL,
     source_request TEXT NOT NULL,
     source_type INT NOT NULL,
-    destiantion_type INT NOT NULL,
-    created_at TEXT NOT NULL,
-    lasted_sent_at TEXT,
+    destination_type INT NOT NULL,
+    created_at INT NOT NULL,
+    lasted_sent_at INT,
     lasted_error TEXT
 );
 `).Execute()

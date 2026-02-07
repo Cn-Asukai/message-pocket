@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"message-pocket/internal/middlewares"
+	"message-pocket/internal/repo"
 	"os"
 	"strings"
 
@@ -48,19 +50,19 @@ func main() {
 	cfg := config.GetConfig()
 
 	// 初始化服务
+	messageBoxRepo := repo.NewMessageBoxRepo(app.DB())
 	napcatService := services.NewNapCatService(cfg)
-	eoService := services.NewEOService()
-	eoController := controllers.NewEOController(eoService, napcatService, cfg)
+	messageBoxService := services.NewMessageBoxService(napcatService, messageBoxRepo)
+	eoService := services.NewEOService(messageBoxService)
+	eoController := controllers.NewEOController(eoService, cfg)
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
-		// 保留原有的 hello 路由
-		se.Router.GET("/hello/{name}", func(e *core.RequestEvent) error {
-			name := e.Request.PathValue("name")
-			return e.String(200, "Hello "+name)
-		})
-
-		// 添加 EO Webhook 路由
-		se.Router.POST("/eo/webhook", eoController.EOWebhookEvent)
+		apiGroup := se.Router.Group("api")
+		{
+			apiGroup.BindFunc(middlewares.TokenAuthMiddleware())
+			// 添加 EO Webhook 路由
+			apiGroup.POST("/eo/webhook", eoController.EOWebhookEvent)
+		}
 
 		return se.Next()
 	})
