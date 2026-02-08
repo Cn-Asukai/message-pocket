@@ -18,8 +18,8 @@ create table message_box (
     source_type INT NOT NULL,
     destination_type INT NOT NULL,
     created_at INT NOT NULL,
-    lasted_sent_at INT,
-    lasted_error TEXT
+    last_sent_at INT,
+    last_error TEXT
 );
 `).Execute()
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"message-pocket/internal/config"
 
+	"github.com/samber/do/v2"
 	"resty.dev/v3"
 )
 
@@ -31,6 +32,11 @@ func NewNapCatService(cfg *config.Config) *NapCatService {
 		token:  cfg.NapCatConfig.Token,
 		apiURL: cfg.NapCatConfig.URL,
 	}
+}
+
+func ProvideNapCatService(i do.Injector) (*NapCatService, error) {
+	cfg := do.MustInvoke[*config.Config](i)
+	return NewNapCatService(cfg), nil
 }
 
 // getURL 构建完整的 API URL

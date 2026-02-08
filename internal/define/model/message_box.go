@@ -4,6 +4,7 @@ import "message-pocket/internal/constants/message_box_enum"
 
 type MessageBoxModel struct {
 	ID              int32                            `json:"id" db:"id"`
+	BizID           string                           `json:"biz_id" db:"biz_id"`
 	Status          int32                            `json:"status" db:"status"`
 	Message         string                           `json:"message" db:"message"`
 	SourceRequest   string                           `json:"source_request" db:"source_request"`

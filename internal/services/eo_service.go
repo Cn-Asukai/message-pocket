@@ -8,6 +8,8 @@ import (
 	"message-pocket/internal/constants/message_box_enum"
 	"message-pocket/internal/define/dtos"
 	"message-pocket/internal/services/logic"
+
+	"github.com/samber/do/v2"
 )
 
 type EOService struct {
@@ -20,6 +22,11 @@ func NewEOService(
 	return &EOService{
 		messageBoxService: messageBoxService,
 	}
+}
+
+func ProvideEOService(i do.Injector) (*EOService, error) {
+	messageBoxService := do.MustInvoke[*MessageBoxService](i)
+	return NewEOService(messageBoxService), nil
 }
 
 func (s *EOService) EOWebhookEventHandle(ctx context.Context, event *dtos.EOEventRequest) error {

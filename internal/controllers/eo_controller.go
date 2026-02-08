@@ -7,6 +7,7 @@ import (
 	"message-pocket/internal/utils"
 
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/samber/do/v2"
 )
 
 // EOController EO 控制器
@@ -25,6 +26,12 @@ func NewEOController(
 		eoService: eoService,
 		config:    cfg,
 	}
+}
+
+func ProvideEOController(i do.Injector) (*EOController, error) {
+	cfg := do.MustInvoke[*config.Config](i)
+	eoService := do.MustInvoke[*services.EOService](i)
+	return NewEOController(eoService, cfg), nil
 }
 
 // EOWebhookEvent 处理 EO Webhook 事件
